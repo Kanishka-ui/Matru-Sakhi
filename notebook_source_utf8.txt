@@ -1,0 +1,131 @@
+!pip install easyocr
+import easyocr
+
+# Initialize OCR reader
+reader = easyocr.Reader(['en'])
+
+def image_to_text(image_path):
+
+    # Read text from image
+    result = reader.readtext(image_path)
+
+    # Extract detected text
+    extracted_text = " ".join([item[1] for item in result])
+
+    return extracted_text
+---
+from google.colab import files
+uploaded = files.upload()
+
+---
+!unzip matrusakhi_model.zip
+---
+import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+# Load trained model
+tokenizer = AutoTokenizer.from_pretrained("matrusakhi_model")
+model = AutoModelForSequenceClassification.from_pretrained("matrusakhi_model")
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device)
+
+# Risk label mapping
+risk_map = {
+    0: "Normal",
+    1: "Moderate",
+    2: "High"
+}
+
+def predict_risk(text):
+
+    inputs = tokenizer(
+        text,
+        return_tensors="pt",
+        truncation=True,
+        padding=True,
+        max_length=128
+    )
+
+    inputs = {k:v.to(device) for k,v in inputs.items()}
+
+    outputs = model(**inputs)
+
+    prediction = torch.argmax(outputs.logits, dim=1).item()
+
+    return risk_map[prediction]
+---
+def generate_advice(risk):
+
+    if risk == "High":
+        advice = "Consult doctor immediately"
+
+    elif risk == "Moderate":
+        advice = "Monitor symptoms and take rest"
+
+    else:
+        advice = "Normal pregnancy condition"
+
+    return advice
+---
+def generate_report(symptoms, risk):
+
+    advice = generate_advice(risk)
+
+    report = {
+        "Symptoms": symptoms,
+        "Risk Level": risk,
+        "Advice": advice
+    }
+
+    return report
+
+def analyze_input(input_data, input_type):
+
+    # Step 1: Convert image to text if needed
+    if input_type == "image":
+        text = image_to_text(input_data)
+
+    else:
+        text = input_data
+
+    # Step 2: Predict risk using BioBERT
+    risk = predict_risk(text)
+
+    # Step 3: Generate final report
+    report = generate_report(text, risk)
+
+    return report
+
+
+# Example run
+if __name__ == "__main__":
+
+    # Example text input
+    text_input = "I have dizziness and swelling in legs"
+
+    result = analyze_input(text_input, "text")
+
+    print(result)
+---
+def get_user_input():
+    input_type = input("Enter input type (text/image): ").lower()
+    if input_type == "text":
+        data = input("Enter your symptoms: ")
+    elif input_type == "image":
+        data = input("Enter image path (e.g., 'image.png'): ") # For image input, provide a path to the image file
+    else:
+        print("Invalid input type. Defaulting to text input.")
+        input_type = "text"
+        data = input("Enter your symptoms: ")
+    return data, input_type
+
+data, input_type = get_user_input()
+
+report = analyze_input(data, input_type)
+
+print("\n--- Pregnancy Health Report ---")
+
+for key, value in report.items():
+    print(f"{key}: {value}")
+---

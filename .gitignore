@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+backend/venv/
+.venv/
+
+# Environment files
+.env
+.env.*
+.env.local
+.env.production
+!.env.example
+
+# Next.js
+client/.next/
+client/out/
+
+# Build
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Uploads
+uploads/
+
+# ML Models (large files)
+*.h5
+*.pkl
+*.pt
+*.bin
+*.safetensors
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
